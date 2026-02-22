@@ -4,6 +4,8 @@
   "packageManager": "pnpm@9.12.2",
   "scripts": {
     "build": "turbo run build",
+    "render:build": "pnpm db:generate && turbo run build --filter=@estate/api...",
+    "render:start": "pnpm --filter @estate/api start",
     "dev": "turbo run dev --parallel",
     "dev:mobile-api": "turbo run dev --parallel --filter @estate/api --filter @estate/mobile",
     "lint": "turbo run lint",

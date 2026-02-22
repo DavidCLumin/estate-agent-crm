@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: estate-agent-crm-api
+    runtime: node
+    plan: free
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm render:build
+    startCommand: pnpm render:start
