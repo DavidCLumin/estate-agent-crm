@@ -1,0 +1,21 @@
+{
+  "name": "estate-agent-crm",
+  "private": true,
+  "packageManager": "pnpm@9.12.2",
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev --parallel",
+    "dev:mobile-api": "turbo run dev --parallel --filter @estate/api --filter @estate/mobile",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck",
+    "db:generate": "pnpm --filter @estate/db db:generate",
+    "db:migrate": "pnpm --filter @estate/db db:migrate",
+    "db:rls": "pnpm --filter @estate/db db:rls",
+    "db:seed": "pnpm --filter @estate/db db:seed"
+  },
+  "devDependencies": {
+    "turbo": "^2.1.1",
+    "typescript": "^5.6.2"
+  }
+}

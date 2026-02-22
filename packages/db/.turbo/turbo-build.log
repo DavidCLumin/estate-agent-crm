@@ -1,0 +1,4 @@
+
+> @estate/db@0.0.1 build /Users/davidcasey/Documents/Codex /Estate Agent CRM/packages/db
+> tsc -p tsconfig.json
+

@@ -1,0 +1,163 @@
+# CHANGELOG_DEV
+
+## 2026-02-20
+- Created `/Users/davidcasey/Documents/Codex /Estate Agent CRM/RUNBOOK.md` with setup/run/build/test instructions for all apps/packages.
+- Fixed workspace typecheck blocker in `/Users/davidcasey/Documents/Codex /Estate Agent CRM/packages/db/tsconfig.json` by adding Node type definitions (`"types": ["node"]`).
+
+- Added `@types/node` to `/Users/davidcasey/Documents/Codex /Estate Agent CRM/packages/db/package.json` and ran `pnpm install` to satisfy DB package TS node types.
+- Hardened publish endpoint in `/Users/davidcasey/Documents/Codex /Estate Agent CRM/packages/api/src/modules/properties/routes.ts` to use `updateMany` + explicit conflict handling, preventing opaque `500` failures on publish edge-cases.
+- Verified API package after publish-route fix: `pnpm --filter @estate/api typecheck` and `pnpm --filter @estate/api test` both pass.
+- Added feature-surface audit section to `/Users/davidcasey/Documents/Codex /Estate Agent CRM/RUNBOOK.md` (mobile routes, admin routes, API route groups).
+- Added `/Users/davidcasey/Documents/Codex /Estate Agent CRM/QA_CHECKLIST.md` with deterministic automated and manual end-to-end verification steps.
+- Executed API E2E smoke run: login (agent+buyer), create draft, edit, publish, buyer visibility, bid, appointment request, and message thread checks all succeeded.
+- Re-ran workspace verification after fixes: `pnpm typecheck`, `pnpm test`, `pnpm build` successful.
+- Added `minimumOffer` to property domain model in `/Users/davidcasey/Documents/Codex /Estate Agent CRM/packages/db/prisma/schema.prisma` and seed data.
+- Updated shared property schema (`/Users/davidcasey/Documents/Codex /Estate Agent CRM/packages/shared/src/index.ts`) to support optional/nullable `minimumOffer`.
+- Updated property routes to persist `minimumOffer` and to hide it from buyer payloads in `GET /properties`.
+- Updated bid validation logic to allow below-asking offers while enforcing:
+  - bid must be above `minimumOffer` (if set)
+  - in OPEN mode, bid must be strictly greater than current highest bid.
+- Updated mobile listing create/edit flows to allow staff to set `minimumOffer`, and updated buyer bid UI messaging so it no longer uses asking price as minimum.
+- Applied DB schema change with `pnpm --filter @estate/db db:push`.
+- Verified behavior via API smoke test:
+  - below-minimum bid rejected with generic message
+  - bid below asking but above minimum accepted
+  - buyer property payload does not include `minimumOffer`.
+- Stabilized property detail bid flow in `/Users/davidcasey/Documents/Codex /Estate Agent CRM/apps/mobile/app/(tabs)/property/[id].tsx` by disabling haptics calls on this screen (native bridge mismatch was causing intermittent `dispatchCommand` crashes after successful bid submit).
+- Added crash diagnostics in `/Users/davidcasey/Documents/Codex /Estate Agent CRM/apps/mobile/app/_layout.tsx` ErrorBoundary to render `error.stack` on-screen for faster root-cause capture from simulator screenshots.
+- Re-verified mobile TS integrity after runtime guard updates with `pnpm --filter @estate/mobile typecheck`.
+- Fixed React Native module singleton resolution in `/Users/davidcasey/Documents/Codex /Estate Agent CRM/apps/mobile/metro.config.js` by pinning `react` and `react-native` via `extraNodeModules`, and setting deterministic `nodeModulesPaths`/`disableHierarchicalLookup` to prevent duplicate RN instance crashes (`dispatchCommand` / `RCT*TextInputView`).
+- Replaced `@estate/ui` `TextField` usage with local native `TextInput` on `/Users/davidcasey/Documents/Codex /Estate Agent CRM/apps/mobile/app/(tabs)/property/[id].tsx` (bid, viewing request, and listing edit forms) to isolate and prevent the recurring `dispatchCommand` runtime crash when submitting offers.
+- Fixed API JSON header behavior in `/Users/davidcasey/Documents/Codex /Estate Agent CRM/apps/mobile/src/lib/api.ts` to only set `Content-Type: application/json` when a request body exists, preventing empty-body POST parser errors on routes like `/publish`.
+- Added listing lifecycle transition guard in `/Users/davidcasey/Documents/Codex /Estate Agent CRM/packages/api/src/modules/properties/rules.ts` and enforced it from `/Users/davidcasey/Documents/Codex /Estate Agent CRM/packages/api/src/modules/properties/routes.ts`:
+  - `DRAFT -> LIVE`
+  - `LIVE -> UNDER_OFFER`
+  - `UNDER_OFFER -> SOLD`
+  - `SOLD` is terminal.
+- Hardened mobile property detail UX in `/Users/davidcasey/Documents/Codex /Estate Agent CRM/apps/mobile/app/(tabs)/property/[id].tsx`:
+  - optimistic bid updates (highest bid, own bid, history),
+  - duplicate-submit guard,
+  - success toast banner,
+  - confirmation dialogs for `Sale Agreed`, `Complete`, and `Delete`,
+  - `Complete` action shown only when status is `UNDER_OFFER`.
+- Added API tests:
+  - `/Users/davidcasey/Documents/Codex /Estate Agent CRM/packages/api/test/property-lifecycle.test.ts` (status transition rules)
+  - updated `/Users/davidcasey/Documents/Codex /Estate Agent CRM/packages/api/test/bids.test.ts` (first OPEN bid below minimum rejected).
+- Updated `/Users/davidcasey/Documents/Codex /Estate Agent CRM/QA_CHECKLIST.md` with new bid UX, lifecycle, permission, and minimum-offer confidentiality checks.
+- Verification run:
+  - `pnpm --filter @estate/api test` passed (3 files, 8 tests)
+  - `pnpm --filter @estate/api typecheck` passed
+  - `pnpm --filter @estate/mobile typecheck` passed
+  - `pnpm test` passed
+  - `pnpm typecheck` passed
+- Added mobile bid rule helpers in `/Users/davidcasey/Documents/Codex /Estate Agent CRM/apps/mobile/src/lib/bidRules.ts` and wired property bid submit flow to use them.
+- Added mobile automated tests in `/Users/davidcasey/Documents/Codex /Estate Agent CRM/apps/mobile/test/bidRules.test.ts` (client-side bid validation + optimistic update state).
+- Added mobile test script and vitest dev dependency in `/Users/davidcasey/Documents/Codex /Estate Agent CRM/apps/mobile/package.json`.
+- Added admin ESLint config in `/Users/davidcasey/Documents/Codex /Estate Agent CRM/apps/admin/.eslintrc.json` and installed `eslint-config-next` in `/Users/davidcasey/Documents/Codex /Estate Agent CRM/apps/admin/package.json` to eliminate admin build parser failures.
+- Final verification run:
+  - `pnpm --filter @estate/mobile test` passed (1 file, 3 tests)
+  - `pnpm test` passed (API + mobile tests)
+  - `pnpm typecheck` passed (all workspace packages)
+  - `pnpm build` passed (workspace build succeeds; admin build emits one non-blocking `react-hooks/exhaustive-deps` warning in `/Users/davidcasey/Documents/Codex /Estate Agent CRM/apps/admin/src/app/(dashboard)/audit/page.tsx:17`).
+
+## 2026-02-21
+- Fixed admin hook dependency warning in `/Users/davidcasey/Documents/Codex /Estate Agent CRM/apps/admin/src/app/(dashboard)/audit/page.tsx` by wrapping `load` in `useCallback([action])` and using `useEffect([load])`.
+- Added API integration coverage in `/Users/davidcasey/Documents/Codex /Estate Agent CRM/packages/api/test/integration-properties-bids.test.ts` for:
+  - `POST /properties/:id/bids` (minimum-offer + highest-bid enforcement),
+  - `PUT /properties/:id` lifecycle transitions,
+  - role guards for update/delete.
+- Brought up local Postgres with Docker, synchronized Prisma schema, and reseeded test data.
+- Verified integration tests execute against live DB (not skipped): `pnpm --filter @estate/api test` now passes `4/4` files, `11/11` tests.
+- Executed live API smoke flow (login -> draft create -> publish -> bid -> LIVE->UNDER_OFFER->SOLD -> delete guards) via curl script with expected outcomes:
+  - publish status `LIVE`,
+  - lifecycle transitions successful,
+  - buyer delete denied `403`, admin delete allowed `200`.
+- Verified minimum-offer confidentiality from buyer payloads via live API check: `buyer_minimumOffer_leaks=0`.
+- Re-verified workspace quality gates:
+  - `pnpm test` passed,
+  - `pnpm typecheck` passed,
+  - `pnpm build` passed,
+  - `pnpm lint` passed (`@estate/admin` reports no ESLint warnings/errors).
+- Added production hardening env/config in `/Users/davidcasey/Documents/Codex /Estate Agent CRM/packages/api/src/lib/env.ts`:
+  - `NODE_ENV`, `LOG_LEVEL`, `TRUST_PROXY`,
+  - global/login/client-error rate-limit knobs.
+- Hardened API bootstrap in `/Users/davidcasey/Documents/Codex /Estate Agent CRM/packages/api/src/app.ts`:
+  - logger redaction for auth/cookie headers,
+  - env-driven `trustProxy` and global rate limit,
+  - readiness/liveness endpoints (`/health/live`, `/health/ready`),
+  - standardized error responses with `requestId`.
+- Added runtime client-error ingest endpoint in `/Users/davidcasey/Documents/Codex /Estate Agent CRM/packages/api/src/modules/monitoring/routes.ts` and registered in `/Users/davidcasey/Documents/Codex /Estate Agent CRM/packages/api/src/routes.ts`.
+- Wired mobile crash boundary telemetry in:
+  - `/Users/davidcasey/Documents/Codex /Estate Agent CRM/apps/mobile/src/lib/api.ts`
+  - `/Users/davidcasey/Documents/Codex /Estate Agent CRM/apps/mobile/app/_layout.tsx`
+- Added/updated production env examples:
+  - `/Users/davidcasey/Documents/Codex /Estate Agent CRM/packages/api/.env.production.example`
+  - `/Users/davidcasey/Documents/Codex /Estate Agent CRM/apps/mobile/.env.production.example`
+  - `/Users/davidcasey/Documents/Codex /Estate Agent CRM/apps/admin/.env.production.example`
+- Expanded operational docs:
+  - `/Users/davidcasey/Documents/Codex /Estate Agent CRM/RUNBOOK.md` (production hardening, monitoring, rollback/hotfix process, seeded release sanity run).
+  - `/Users/davidcasey/Documents/Codex /Estate Agent CRM/QA_CHECKLIST.md` (real-device QA flows for buyer bid, agent lifecycle, admin actions).
+- Release sanity rerun evidence (seeded baseline):
+  - `docker compose up -d` passed.
+  - `pnpm install` passed.
+  - `pnpm --filter @estate/db db:push` passed.
+  - `pnpm db:seed` passed.
+  - `pnpm lint` passed.
+  - `pnpm typecheck` passed.
+  - `pnpm test` passed.
+  - `pnpm build` passed.
+  - `pnpm --filter @estate/api test` passed with integration tests executing (`11/11`).
+- Live API smoke evidence:
+  - publish visibility: `published_status=LIVE buyer_sees_live=yes`.
+  - lifecycle/guards: `bid1_code=201 bid2_code=201 under_offer=UNDER_OFFER sold=SOLD buyer_delete=403 admin_delete=200`.
+  - minimum-offer confidentiality check: buyer payload leak count `0`.
+  - client error ingest endpoint check: `POST /client-errors` returned `202`.
+- Added tenant settings API in `/Users/davidcasey/Documents/Codex /Estate Agent CRM/packages/api/src/modules/tenants/routes.ts`:
+  - `GET /tenants/settings`
+  - `PUT /tenants/settings` (tenant-admin only)
+  - persisted in `Tenant.emailProviderMeta`.
+- Added notification abstraction in `/Users/davidcasey/Documents/Codex /Estate Agent CRM/packages/api/src/lib/notifications.ts` and wired auth/appointments email notifications to use safe stub delivery mode.
+- Expanded API env surface in `/Users/davidcasey/Documents/Codex /Estate Agent CRM/packages/api/src/lib/env.ts`:
+  - bid endpoint rate-limit knobs,
+  - email delivery mode and SMTP config variables.
+- Hardened tenant isolation and lifecycle endpoints:
+  - `/Users/davidcasey/Documents/Codex /Estate Agent CRM/packages/api/src/modules/bids/routes.ts` now checks tenant ownership before bid/close/accept actions.
+  - `/Users/davidcasey/Documents/Codex /Estate Agent CRM/packages/api/src/modules/appointments/routes.ts` now validates tenant-bound appointment access for approve/decline/cancel/ics.
+  - `/Users/davidcasey/Documents/Codex /Estate Agent CRM/packages/api/src/modules/properties/routes.ts` now writes audit logs for update/status-change/delete.
+- Added tenant user management endpoints in `/Users/davidcasey/Documents/Codex /Estate Agent CRM/packages/api/src/modules/users/routes.ts`:
+  - `GET /users`
+  - `POST /users`
+  - `PATCH /users/:id`
+- Added phone verification stub endpoints in `/Users/davidcasey/Documents/Codex /Estate Agent CRM/packages/api/src/modules/auth/routes.ts`:
+  - `POST /auth/phone/request`
+  - `POST /auth/phone/verify`
+- Expanded integration coverage in `/Users/davidcasey/Documents/Codex /Estate Agent CRM/packages/api/test/integration-properties-bids.test.ts` for:
+  - `POST /properties/:id/bids`,
+  - `POST /properties/:id/close-bidding`,
+  - `POST /properties/:id/accept-offer/:bidId`,
+  - lifecycle + role guards.
+- Added required admin control-panel pages:
+  - `/Users/davidcasey/Documents/Codex /Estate Agent CRM/apps/admin/src/app/(dashboard)/users/page.tsx`
+  - `/Users/davidcasey/Documents/Codex /Estate Agent CRM/apps/admin/src/app/(dashboard)/settings/page.tsx`
+- Updated admin navigation and lifecycle actions:
+  - `/Users/davidcasey/Documents/Codex /Estate Agent CRM/apps/admin/src/components/DashboardShell.tsx`
+  - `/Users/davidcasey/Documents/Codex /Estate Agent CRM/apps/admin/src/app/(dashboard)/properties/page.tsx`
+  - `/Users/davidcasey/Documents/Codex /Estate Agent CRM/apps/admin/src/app/(dashboard)/appointments/page.tsx`
+  - `/Users/davidcasey/Documents/Codex /Estate Agent CRM/apps/admin/src/app/(dashboard)/bids/page.tsx`
+- Fixed admin request header behavior to avoid empty-body JSON parser errors on POST endpoints:
+  - `/Users/davidcasey/Documents/Codex /Estate Agent CRM/apps/admin/src/components/api.ts`
+  - `/Users/davidcasey/Documents/Codex /Estate Agent CRM/apps/admin/src/components/clientApi.ts`
+  - `/Users/davidcasey/Documents/Codex /Estate Agent CRM/apps/admin/src/app/(auth)/login/page.tsx`
+- Documentation updates:
+  - `/Users/davidcasey/Documents/Codex /Estate Agent CRM/RUNBOOK.md` (staging deploy, tester onboarding, settings/users pages, env vars).
+  - `/Users/davidcasey/Documents/Codex /Estate Agent CRM/QA_CHECKLIST.md` (admin settings/users/lifecycle verification + integration test gate).
+  - `/Users/davidcasey/Documents/Codex /Estate Agent CRM/ASSUMPTIONS.md` updated with settings storage and email-mode assumptions.
+- Verification after this batch:
+  - `pnpm --filter @estate/api test` passed (4 files, 12 tests).
+  - `pnpm --filter @estate/api typecheck` passed.
+  - `pnpm --filter @estate/admin typecheck` passed.
+  - `pnpm --filter @estate/admin lint` passed (0 warnings/errors).
+  - `pnpm --filter @estate/admin build` passed.
+  - `pnpm --filter @estate/mobile typecheck` passed.
+  - `pnpm --filter @estate/mobile test` passed.
+  - workspace `pnpm test`, `pnpm typecheck`, `pnpm build` passed.

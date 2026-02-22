@@ -1,0 +1,14 @@
+
+> @estate/mobile@0.0.1 test /Users/davidcasey/Documents/Codex /Estate Agent CRM/apps/mobile
+> vitest run
+
+
+ RUN  v2.1.9 /Users/davidcasey/Documents/Codex /Estate Agent CRM/apps/mobile
+
+ ✓ test/bidRules.test.ts (3 tests) 22ms
+
+ Test Files  1 passed (1)
+      Tests  3 passed (3)
+   Start at  13:46:59
+   Duration  704ms (transform 71ms, setup 0ms, collect 58ms, tests 22ms, environment 0ms, prepare 95ms)
+

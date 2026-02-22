@@ -1,0 +1,40 @@
+
+> @estate/admin@0.0.1 build /Users/davidcasey/Documents/Codex /Estate Agent CRM/apps/admin
+> next build
+
+  ▲ Next.js 15.0.0
+  - Environments: .env.local
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/14) ...
+   Generating static pages (3/14) 
+   Generating static pages (6/14) 
+   Generating static pages (10/14) 
+ ✓ Generating static pages (14/14)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                              Size     First Load JS
+┌ ○ /                                    136 B          99.3 kB
+├ ○ /_not-found                          898 B           100 kB
+├ ○ /appointments                        1.63 kB         110 kB
+├ ○ /audit                               1.41 kB         110 kB
+├ ○ /bids                                1.94 kB         110 kB
+├ ○ /branding                            1.4 kB          110 kB
+├ ○ /buyers                              1.23 kB         109 kB
+├ ○ /login                               1.13 kB         100 kB
+├ ○ /properties                          2.13 kB         110 kB
+├ ○ /settings                            1.84 kB         110 kB
+├ ○ /super-admin                         1.48 kB         110 kB
+└ ○ /users                               2.27 kB         111 kB
++ First Load JS shared by all            99.1 kB
+  ├ chunks/333-805779f0918e6c5c.js       44.6 kB
+  ├ chunks/c2b9d013-be165f6e38e41a11.js  52.6 kB
+  └ other shared chunks (total)          1.9 kB
+
+
+○  (Static)  prerendered as static content
+

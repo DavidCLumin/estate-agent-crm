@@ -1,0 +1,5 @@
+
+> @estate/admin@0.0.1 lint /Users/davidcasey/Documents/Codex /Estate Agent CRM/apps/admin
+> next lint
+
+✔ No ESLint warnings or errors

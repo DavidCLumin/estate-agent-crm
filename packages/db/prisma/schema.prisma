@@ -1,0 +1,324 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPER_ADMIN
+  TENANT_ADMIN
+  AGENT
+  BUYER
+}
+
+enum PropertyStatus {
+  DRAFT
+  LIVE
+  UNDER_OFFER
+  SOLD
+}
+
+enum BiddingMode {
+  SEALED
+  OPEN
+}
+
+enum AppointmentStatus {
+  REQUESTED
+  APPROVED
+  DECLINED
+  CANCELLED
+  COMPLETED
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  VIEWING_BOOKED
+  OFFER_MADE
+  CLOSED_WON
+  CLOSED_LOST
+}
+
+enum ReminderChannel {
+  IN_APP
+  PUSH
+}
+
+model Tenant {
+  id                 String   @id @default(uuid()) @db.Uuid
+  name               String
+  key                String   @unique
+  logoUrl            String?
+  primaryColor       String   @default("#1E6BFF")
+  secondaryColor     String   @default("#30B07A")
+  neutralPalette     Json
+  cornerRadius       Int      @default(14)
+  spacingScale       Json
+  customDomain       String?
+  subdomain          String?
+  emailSenderName    String?
+  emailSenderAddress String?
+  emailProvider      String?
+  emailProviderMeta  Json?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  deletedAt          DateTime?
+
+  users         User[]
+  properties    Property[]
+  appointments  Appointment[]
+  bids          Bid[]
+  messages      Message[]
+  userSessions  UserSession[]
+  auditLogs     AuditLog[]
+  leads         Lead[]
+  leadNotes     LeadNote[]
+  reminders     Reminder[]
+
+  @@index([key])
+}
+
+model User {
+  id                    String    @id @default(uuid()) @db.Uuid
+  tenantId              String?   @db.Uuid
+  name                  String
+  email                 String    @unique
+  passwordHash          String
+  role                  Role
+  emailVerifiedAt       DateTime?
+  emailVerificationCode String?
+  failedLoginCount      Int       @default(0)
+  lockedUntil           DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  deletedAt             DateTime?
+
+  tenant        Tenant?        @relation(fields: [tenantId], references: [id])
+  sessions      UserSession[]
+  createdProps  Property[]     @relation("createdBy")
+  assignedProps Property[]     @relation("assignedAgent")
+  buyerBids     Bid[]          @relation("buyerBids")
+  buyerAppts    Appointment[]  @relation("buyerAppointments")
+  agentAppts    Appointment[]  @relation("agentAppointments")
+  messages      Message[]
+  auditLogs     AuditLog[]
+  assignedLeads Lead[]          @relation("assignedLeads")
+  createdLeads  Lead[]          @relation("createdLeads")
+  leadNotes     LeadNote[]
+  reminders     Reminder[]
+
+  @@index([tenantId, role])
+  @@index([tenantId, createdAt])
+}
+
+model UserSession {
+  id              String   @id @default(uuid()) @db.Uuid
+  tenantId        String?  @db.Uuid
+  userId          String   @db.Uuid
+  refreshTokenHash String
+  userAgent       String?
+  ipAddress       String?
+  expiresAt       DateTime
+  revokedAt       DateTime?
+  createdAt       DateTime @default(now())
+
+  tenant Tenant? @relation(fields: [tenantId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@index([tenantId, userId, expiresAt])
+}
+
+model Property {
+  id              String         @id @default(uuid()) @db.Uuid
+  tenantId        String         @db.Uuid
+  title           String
+  address         String
+  eircode         String?
+  description     String
+  priceGuide      Decimal        @db.Decimal(12, 2)
+  minimumOffer    Decimal?       @db.Decimal(12, 2)
+  status          PropertyStatus @default(DRAFT)
+  biddingMode     BiddingMode
+  biddingDeadline DateTime?
+  minIncrement    Int            @default(1000)
+  createdById     String         @db.Uuid
+  assignedAgentId String?        @db.Uuid
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  deletedAt       DateTime?
+
+  tenant        Tenant        @relation(fields: [tenantId], references: [id])
+  createdBy     User          @relation("createdBy", fields: [createdById], references: [id])
+  assignedAgent User?         @relation("assignedAgent", fields: [assignedAgentId], references: [id])
+  media         PropertyMedia[]
+  appointments  Appointment[]
+  bids          Bid[]
+  messages      Message[]
+  leads         Lead[]
+  reminders     Reminder[]
+
+  @@index([tenantId, status, biddingDeadline])
+  @@index([tenantId, createdAt])
+}
+
+model PropertyMedia {
+  id         String   @id @default(uuid()) @db.Uuid
+  tenantId   String   @db.Uuid
+  propertyId String   @db.Uuid
+  url        String
+  createdAt  DateTime @default(now())
+
+  property Property @relation(fields: [propertyId], references: [id])
+
+  @@index([tenantId, propertyId, createdAt])
+}
+
+model Appointment {
+  id             String            @id @default(uuid()) @db.Uuid
+  tenantId       String            @db.Uuid
+  propertyId     String            @db.Uuid
+  buyerId        String            @db.Uuid
+  agentId        String            @db.Uuid
+  preferredStart DateTime
+  preferredEnd   DateTime
+  status         AppointmentStatus @default(REQUESTED)
+  note           String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  deletedAt      DateTime?
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id])
+  property Property @relation(fields: [propertyId], references: [id])
+  buyer    User     @relation("buyerAppointments", fields: [buyerId], references: [id])
+  agent    User     @relation("agentAppointments", fields: [agentId], references: [id])
+  reminders Reminder[]
+
+  @@index([tenantId, status, createdAt])
+  @@index([tenantId, propertyId])
+}
+
+model Bid {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @db.Uuid
+  propertyId  String   @db.Uuid
+  buyerUserId String   @db.Uuid
+  amount      Decimal  @db.Decimal(12, 2)
+  bidHash     String
+  createdAt   DateTime @default(now())
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id])
+  property Property @relation(fields: [propertyId], references: [id])
+  buyer    User     @relation("buyerBids", fields: [buyerUserId], references: [id])
+
+  @@index([tenantId, propertyId, createdAt])
+  @@index([tenantId, buyerUserId, createdAt])
+}
+
+model Message {
+  id         String   @id @default(uuid()) @db.Uuid
+  tenantId   String   @db.Uuid
+  propertyId String   @db.Uuid
+  senderId   String   @db.Uuid
+  body       String
+  readAt     DateTime?
+  createdAt  DateTime @default(now())
+  deletedAt  DateTime?
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id])
+  property Property @relation(fields: [propertyId], references: [id])
+  sender   User     @relation(fields: [senderId], references: [id])
+
+  @@index([tenantId, propertyId, createdAt])
+}
+
+model AuditLog {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String?  @db.Uuid
+  userId      String?  @db.Uuid
+  action      String
+  entity      String
+  entityId    String?
+  metadata    Json?
+  ipAddress   String?
+  createdAt   DateTime @default(now())
+
+  tenant Tenant? @relation(fields: [tenantId], references: [id])
+  user   User?   @relation(fields: [userId], references: [id])
+
+  @@index([tenantId, action, createdAt])
+  @@index([userId, createdAt])
+}
+
+model Lead {
+  id               String     @id @default(uuid()) @db.Uuid
+  tenantId         String     @db.Uuid
+  firstName        String
+  lastName         String
+  email            String?
+  phone            String?
+  source           String?
+  budgetMin        Decimal?   @db.Decimal(12, 2)
+  budgetMax        Decimal?   @db.Decimal(12, 2)
+  status           LeadStatus @default(NEW)
+  assignedAgentId  String?    @db.Uuid
+  createdById      String     @db.Uuid
+  propertyId       String?    @db.Uuid
+  nextFollowUpAt   DateTime?
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+  deletedAt        DateTime?
+
+  tenant        Tenant      @relation(fields: [tenantId], references: [id])
+  assignedAgent User?       @relation("assignedLeads", fields: [assignedAgentId], references: [id])
+  createdBy     User        @relation("createdLeads", fields: [createdById], references: [id])
+  property      Property?   @relation(fields: [propertyId], references: [id])
+  notes         LeadNote[]
+  reminders     Reminder[]
+
+  @@index([tenantId, status, nextFollowUpAt])
+  @@index([tenantId, assignedAgentId, createdAt])
+}
+
+model LeadNote {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @db.Uuid
+  leadId    String   @db.Uuid
+  userId    String   @db.Uuid
+  body      String
+  createdAt DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  lead   Lead   @relation(fields: [leadId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@index([tenantId, leadId, createdAt])
+}
+
+model Reminder {
+  id            String          @id @default(uuid()) @db.Uuid
+  tenantId      String          @db.Uuid
+  userId        String          @db.Uuid
+  leadId        String?         @db.Uuid
+  propertyId    String?         @db.Uuid
+  appointmentId String?         @db.Uuid
+  title         String
+  body          String?
+  channel       ReminderChannel @default(IN_APP)
+  dueAt         DateTime
+  completedAt   DateTime?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  tenant      Tenant       @relation(fields: [tenantId], references: [id])
+  user        User         @relation(fields: [userId], references: [id])
+  lead        Lead?        @relation(fields: [leadId], references: [id])
+  property    Property?    @relation(fields: [propertyId], references: [id])
+  appointment Appointment? @relation(fields: [appointmentId], references: [id])
+
+  @@index([tenantId, userId, dueAt, completedAt])
+}

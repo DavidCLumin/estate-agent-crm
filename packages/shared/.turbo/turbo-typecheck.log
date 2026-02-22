@@ -1,0 +1,4 @@
+
+> @estate/shared@0.0.1 typecheck /Users/davidcasey/Documents/Codex /Estate Agent CRM/packages/shared
+> tsc -p tsconfig.json --noEmit
+

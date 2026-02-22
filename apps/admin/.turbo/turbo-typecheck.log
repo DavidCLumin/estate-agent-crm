@@ -1,0 +1,4 @@
+
+> @estate/admin@0.0.1 typecheck /Users/davidcasey/Documents/Codex /Estate Agent CRM/apps/admin
+> tsc -p tsconfig.json --noEmit
+

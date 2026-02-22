@@ -1,0 +1,18 @@
+{
+  "expo": {
+    "name": "Estate CRM",
+    "slug": "estate-crm",
+    "scheme": "estatecrm",
+    "newArchEnabled": false,
+    "plugins": [
+      "expo-router"
+    ],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.davidcas.estate-crm"
+    },
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

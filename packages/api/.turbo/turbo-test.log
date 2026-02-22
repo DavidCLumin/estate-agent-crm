@@ -1,0 +1,17 @@
+
+> @estate/api@0.0.1 test /Users/davidcasey/Documents/Codex /Estate Agent CRM/packages/api
+> vitest run
+
+
+ RUN  v2.1.9 /Users/davidcasey/Documents/Codex /Estate Agent CRM/packages/api
+
+ ✓ test/refresh.test.ts (2 tests) 3ms
+ ✓ test/property-lifecycle.test.ts (2 tests) 2ms
+ ✓ test/bids.test.ts (4 tests) 4ms
+ ↓ test/integration-properties-bids.test.ts (4 tests | 4 skipped)
+
+ Test Files  3 passed | 1 skipped (4)
+      Tests  8 passed | 4 skipped (12)
+   Start at  13:46:59
+   Duration  1.01s (transform 256ms, setup 0ms, collect 772ms, tests 9ms, environment 0ms, prepare 694ms)
+
